@@ -1,5 +1,8 @@
 package game;
 
+import constants.Piece;
+import constants.ReversiConstants;
+
 import javax.imageio.ImageIO;
 import javax.swing.*;
 import java.awt.*;
@@ -7,14 +10,19 @@ import java.util.Arrays;
 
 public class Reversi {
 
+    private static final int BOARD_SIZE = 8;
+
     private JButton[][] boardButtons;
     private Piece[][] board;
     private JFrame gui;
     private Image blackPiece;
     private Image whitePiece;
 
-    private static final int BOARD_SIZE = 8;
+    private Piece playerTurn = Piece.BLACK;
 
+    /**
+     * Sets up the game and beings execution
+     */
     public Reversi() {
         gui = new JFrame();
         gui.setTitle("Reversi");
@@ -34,10 +42,11 @@ public class Reversi {
         // Scale the image to fit in the grid
         blackPiece = blackPiece.getScaledInstance(85, 85, Image.SCALE_SMOOTH);
         whitePiece = whitePiece.getScaledInstance(85, 85, Image.SCALE_SMOOTH);
+        gui.setVisible(true);
 
         // Reset the game board
         resetBoard();
-        gui.setVisible(true);
+
     }
 
     /**
@@ -45,29 +54,41 @@ public class Reversi {
      */
     private void resetBoard() {
 
+        // Initialize the Board
         this.boardButtons = new JButton[BOARD_SIZE][BOARD_SIZE];
         this.board = new Piece[BOARD_SIZE][BOARD_SIZE];
 
         // Initialize the board with no pieces
-        for(int i = 0; i < BOARD_SIZE; i++) {
+        for (int i = 0; i < BOARD_SIZE; i++) {
             Arrays.fill(this.board[i], Piece.NONE);
         }
 
-        // Set the background color as green
+        MovementListener listener = new MovementListener(board, this);
+
+        // Initialize all buttons
         for (int i = 0; i < BOARD_SIZE; i++) {
             for (int j = 0; j < BOARD_SIZE; j++) {
                 boardButtons[i][j] = new JButton();
                 boardButtons[i][j].setOpaque(true);
                 boardButtons[i][j].setBackground(Color.GREEN);
+
+                // Save row column properties (note: top left corner is 0,0 on the board)
+                boardButtons[i][j].putClientProperty(ReversiConstants.ROW, i);
+                boardButtons[i][j].putClientProperty(ReversiConstants.COLUMN, j);
+
+                // Add action listener to the JButtons
+                boardButtons[i][j].addActionListener(listener);
+
+                // Add the button to the board
                 gui.add(boardButtons[i][j]);
             }
         }
 
         // Initial piece placement
-        this.board[3][3] = Piece.BLACK;
-        this.board[3][4] = Piece.WHITE;
-        this.board[4][3] = Piece.WHITE;
-        this.board[4][4] = Piece.BLACK;
+        this.board[3][3] = Piece.WHITE;
+        this.board[3][4] = Piece.BLACK;
+        this.board[4][3] = Piece.BLACK;
+        this.board[4][4] = Piece.WHITE;
 
 
         // draw the board
@@ -75,11 +96,11 @@ public class Reversi {
     }
 
     /**
-     * Draws pieces on the baord based on the current board state
+     * Draws pieces on the board based on the current board state
      */
-    private void drawBoard() {
+    public void drawBoard() {
         for (int i = 0; i < BOARD_SIZE; i++) {
-            for(int j = 0; j < BOARD_SIZE; j++) {
+            for (int j = 0; j < BOARD_SIZE; j++) {
                 switch (board[i][j]) {
                     case BLACK:
                         boardButtons[i][j].setIcon(new ImageIcon((blackPiece)));
@@ -93,6 +114,17 @@ public class Reversi {
                         boardButtons[i][j].setIcon(null);
                 }
             }
+        }
+    }
+
+    /**
+     * Switch the player
+     */
+    public void nextPlayer() {
+        if(playerTurn.equals(Piece.BLACK)) {
+            playerTurn = Piece.WHITE;
+        } else {
+            playerTurn = Piece.BLACK;
         }
     }
 }
