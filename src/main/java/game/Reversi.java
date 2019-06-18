@@ -6,6 +6,8 @@ import constants.ReversiConstants;
 import javax.imageio.ImageIO;
 import javax.swing.*;
 import java.awt.*;
+import java.awt.event.WindowEvent;
+import java.awt.event.WindowListener;
 import java.util.Arrays;
 
 public class Reversi {
@@ -16,6 +18,7 @@ public class Reversi {
     private JFrame gui;
     private Image blackPiece;
     private Image whitePiece;
+    private int validMoves;
 
     private GameState state;
 
@@ -55,7 +58,10 @@ public class Reversi {
      */
     private void newGame() {
 
+
         // Initialize the Board
+        gui.getContentPane().removeAll();
+        gui.repaint();
         this.boardButtons = new JButton[BOARD_SIZE][BOARD_SIZE];
         state = new GameState(BOARD_SIZE);
 
@@ -80,8 +86,6 @@ public class Reversi {
             }
         }
 
-
-
         // draw the board
         markValidMoves();
         drawBoard();
@@ -91,6 +95,8 @@ public class Reversi {
      * Draws pieces on the board based on the current Game state
      */
     private void drawBoard() {
+        gui.setVisible(false);
+
         for (int i = 0; i < BOARD_SIZE; i++) {
             for (int j = 0; j < BOARD_SIZE; j++) {
                 switch (state.getBoard()[i][j]) {
@@ -115,6 +121,7 @@ public class Reversi {
                 }
             }
         }
+        gui.setVisible(true);
     }
 
     /**
@@ -124,6 +131,10 @@ public class Reversi {
      * @param column - column to place piece at
      */
     public void attemptMove(int row, int column) {
+
+        if(!state.getBoard()[row][column].equals(Piece.POSSIBLE_MOVE)) {
+            return;
+        }
 
         // Check every direction for valid move
         boolean validMove = checkDirection(row, column, -1, -1, false, false);
@@ -135,11 +146,13 @@ public class Reversi {
         validMove = checkDirection(row, column, 1, -1, false, false) || validMove;
         validMove = checkDirection(row, column, 0, -1, false, false) || validMove;
 
+        // Do checks if the move was valid
         if (validMove) {
             state.nextPlayer();
             clearPossibleMoves();
             markValidMoves();
             drawBoard();
+            checkFinished();
         }
     }
 
@@ -148,7 +161,7 @@ public class Reversi {
      * Called after a player makes a move
      */
     private void markValidMoves() {
-
+        validMoves = 0;
         boolean validMove;
 
         // Loop through every board location
@@ -172,8 +185,46 @@ public class Reversi {
 
                 if(validMove) {
                     state.getBoard()[i][j] = Piece.POSSIBLE_MOVE;
+                    validMoves += 1;
                 }
             }
+        }
+    }
+
+    private void checkFinished() {
+
+        // If the number of valid moves is zero, the game is over
+        if(validMoves == 0) {
+
+            System.out.println("No valid moves left.  Game over");
+
+            int blackPieces = 0, whitePieces = 0;
+
+            // Count the number of pieces
+            for(int i = 0; i < BOARD_SIZE; i++) {
+                for(int j = 0; j < BOARD_SIZE; j++) {
+                    switch(state.getBoard()[i][j]) {
+                        case BLACK:
+                            blackPieces++;
+                            break;
+                        case WHITE:
+                            whitePieces++;
+                            break;
+                    }
+                }
+            }
+
+            String message;
+            if(blackPieces > whitePieces) {
+                message = "Black wins: " + blackPieces + " to " + whitePieces;
+            } else {
+                message = "White wins: " + whitePieces + " to " + blackPieces;
+            }
+
+            message += " click OK or close to play a new game";
+
+            JOptionPane.showMessageDialog(gui, message);
+            newGame();
         }
     }
 
