@@ -1,5 +1,5 @@
 package constants;
 
 public enum Piece {
-    WHITE, BLACK, NONE;
+    WHITE, BLACK, POSSIBLE_MOVE, NONE;
 }

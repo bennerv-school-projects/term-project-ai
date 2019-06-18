@@ -80,7 +80,10 @@ public class Reversi {
             }
         }
 
+
+
         // draw the board
+        markValidMoves();
         drawBoard();
     }
 
@@ -93,14 +96,22 @@ public class Reversi {
                 switch (state.getBoard()[i][j]) {
                     case BLACK:
                         boardButtons[i][j].setIcon(new ImageIcon((blackPiece)));
+                        boardButtons[i][j].setBackground(Color.GREEN);
                         break;
 
                     case WHITE:
                         boardButtons[i][j].setIcon(new ImageIcon((whitePiece)));
+                        boardButtons[i][j].setBackground(Color.GREEN);
+                        break;
+
+                    case POSSIBLE_MOVE:
+                        boardButtons[i][j].setBackground(Color.yellow);
                         break;
 
                     case NONE:
                         boardButtons[i][j].setIcon(null);
+                        boardButtons[i][j].setBackground(Color.GREEN);
+                        break;
                 }
             }
         }
@@ -115,21 +126,69 @@ public class Reversi {
     public void attemptMove(int row, int column) {
 
         // Check every direction for valid move
-        boolean validMove = checkDirection(row, column, -1, -1, false);
-        validMove = checkDirection(row, column, -1, 0, false) || validMove;
-        validMove = checkDirection(row, column, -1, 1, false) || validMove;
-        validMove = checkDirection(row, column, 0, 1, false) || validMove;
-        validMove = checkDirection(row, column, 1, 1, false) || validMove;
-        validMove = checkDirection(row, column, 1, 0, false) || validMove;
-        validMove = checkDirection(row, column, 1, -1, false) || validMove;
-        validMove = checkDirection(row, column, 0, -1, false) || validMove;
+        boolean validMove = checkDirection(row, column, -1, -1, false, false);
+        validMove = checkDirection(row, column, -1, 0, false, false) || validMove;
+        validMove = checkDirection(row, column, -1, 1, false, false) || validMove;
+        validMove = checkDirection(row, column, 0, 1, false, false) || validMove;
+        validMove = checkDirection(row, column, 1, 1, false, false) || validMove;
+        validMove = checkDirection(row, column, 1, 0, false, false) || validMove;
+        validMove = checkDirection(row, column, 1, -1, false, false) || validMove;
+        validMove = checkDirection(row, column, 0, -1, false, false) || validMove;
 
         if (validMove) {
             state.nextPlayer();
+            clearPossibleMoves();
+            markValidMoves();
+            drawBoard();
         }
-        System.out.println("Was it a valid move? " + validMove);
+    }
 
+    /**
+     * Checks if there is a valid move at every board location.
+     * Called after a player makes a move
+     */
+    private void markValidMoves() {
 
+        boolean validMove;
+
+        // Loop through every board location
+        for(int i = 0; i < BOARD_SIZE; i++) {
+            for(int j = 0; j < BOARD_SIZE; j++) {
+
+                // If this piece is not none, continue on
+                if(!state.getBoard()[i][j].equals(Piece.NONE)) {
+                    continue;
+                }
+
+                // Check every direction for valid
+                validMove = checkDirection(i, j, -1, -1, false, true);
+                validMove = validMove || checkDirection(i, j, -1, 0, false, true);
+                validMove = validMove || checkDirection(i, j, -1, 1, false, true);
+                validMove = validMove || checkDirection(i, j, 0, 1, false, true);
+                validMove = validMove || checkDirection(i, j, 1, 1, false, true);
+                validMove = validMove || checkDirection(i, j, 1, 0, false, true);
+                validMove = validMove || checkDirection(i, j, 1, -1, false, true);
+                validMove = validMove || checkDirection(i, j, 0, -1, false, true);
+
+                if(validMove) {
+                    state.getBoard()[i][j] = Piece.POSSIBLE_MOVE;
+                }
+            }
+        }
+    }
+
+    /**
+     * Clears out any possible moves on the game board.
+     * Called when a player makes a move
+     */
+    private void clearPossibleMoves() {
+        for(int i = 0; i < BOARD_SIZE; i++) {
+            for(int j = 0; j < BOARD_SIZE; j++) {
+                if(state.getBoard()[i][j].equals(Piece.POSSIBLE_MOVE)) {
+                    state.getBoard()[i][j] = Piece.NONE;
+                }
+            }
+        }
     }
 
     /**
@@ -142,7 +201,7 @@ public class Reversi {
      * @param hitOpposite  - whether we've hit the opposite piece yet
      * @return - boolean whether or not it was a valid move
      */
-    private boolean checkDirection(int row, int col, int rowIncrement, int colIncrement, boolean hitOpposite) {
+    private boolean checkDirection(int row, int col, int rowIncrement, int colIncrement, boolean hitOpposite, boolean testMove) {
 
         // Check if out of bounds
         if (row + rowIncrement == BOARD_SIZE ||
@@ -162,11 +221,13 @@ public class Reversi {
 
         // If hit opposite and now other color, return true
         if (hitOpposite && state.getBoard()[newRow][newCol].equals(state.getCurrentPlayer())) {
-            makeMove(row, col, -1 * rowIncrement, -1 * colIncrement);
+            if(!testMove) {
+                makeMove(row, col, -1 * rowIncrement, -1 * colIncrement);
+            }
             return true;
         }
 
-        return checkDirection(newRow, newCol, rowIncrement, colIncrement, true);
+        return checkDirection(newRow, newCol, rowIncrement, colIncrement, true, testMove);
 
     }
 
@@ -185,7 +246,6 @@ public class Reversi {
             col = col + colIncrement;
         }
         state.getBoard()[row][col] = state.getCurrentPlayer();
-        drawBoard();
     }
 
 
