@@ -13,12 +13,11 @@ public class Reversi {
     private static final int BOARD_SIZE = 8;
 
     private JButton[][] boardButtons;
-    private Piece[][] board;
     private JFrame gui;
     private Image blackPiece;
     private Image whitePiece;
 
-    private Piece playerTurn = Piece.BLACK;
+    private GameState state;
 
     /**
      * Sets up the game and beings execution
@@ -42,28 +41,25 @@ public class Reversi {
         // Scale the image to fit in the grid
         blackPiece = blackPiece.getScaledInstance(85, 85, Image.SCALE_SMOOTH);
         whitePiece = whitePiece.getScaledInstance(85, 85, Image.SCALE_SMOOTH);
-        gui.setVisible(true);
 
-        // Reset the game board
-        resetBoard();
+
+        // Create a new game
+        newGame();
+
+        gui.setVisible(true);
 
     }
 
     /**
-     * Resets the reversi board to default
+     * Re-initialize the game state
      */
-    private void resetBoard() {
+    private void newGame() {
 
         // Initialize the Board
         this.boardButtons = new JButton[BOARD_SIZE][BOARD_SIZE];
-        this.board = new Piece[BOARD_SIZE][BOARD_SIZE];
+        state = new GameState(BOARD_SIZE);
 
-        // Initialize the board with no pieces
-        for (int i = 0; i < BOARD_SIZE; i++) {
-            Arrays.fill(this.board[i], Piece.NONE);
-        }
-
-        MovementListener listener = new MovementListener(board, this);
+        MovementListener listener = new MovementListener(this);
 
         // Initialize all buttons
         for (int i = 0; i < BOARD_SIZE; i++) {
@@ -84,24 +80,17 @@ public class Reversi {
             }
         }
 
-        // Initial piece placement
-        this.board[3][3] = Piece.WHITE;
-        this.board[3][4] = Piece.BLACK;
-        this.board[4][3] = Piece.BLACK;
-        this.board[4][4] = Piece.WHITE;
-
-
         // draw the board
         drawBoard();
     }
 
     /**
-     * Draws pieces on the board based on the current board state
+     * Draws pieces on the board based on the current Game state
      */
-    public void drawBoard() {
+    private void drawBoard() {
         for (int i = 0; i < BOARD_SIZE; i++) {
             for (int j = 0; j < BOARD_SIZE; j++) {
-                switch (board[i][j]) {
+                switch (state.getBoard()[i][j]) {
                     case BLACK:
                         boardButtons[i][j].setIcon(new ImageIcon((blackPiece)));
                         break;
@@ -118,14 +107,96 @@ public class Reversi {
     }
 
     /**
-     * Switch the player
+     * Attempt to place a piece at the location
+     *
+     * @param row    - row to place piece at
+     * @param column - column to place piece at
      */
-    public void nextPlayer() {
-        if(playerTurn.equals(Piece.BLACK)) {
-            playerTurn = Piece.WHITE;
-        } else {
-            playerTurn = Piece.BLACK;
+    public void attemptMove(int row, int column) {
+
+        // Check every direction for valid move
+        boolean validMove = checkDirection(row, column, -1, -1, false);
+        validMove = checkDirection(row, column, -1, 0, false) || validMove;
+        validMove = checkDirection(row, column, -1, 1, false) || validMove;
+        validMove = checkDirection(row, column, 0, 1, false) || validMove;
+        validMove = checkDirection(row, column, 1, 1, false) || validMove;
+        validMove = checkDirection(row, column, 1, 0, false) || validMove;
+        validMove = checkDirection(row, column, 1, -1, false) || validMove;
+        validMove = checkDirection(row, column, 0, -1, false) || validMove;
+
+        if (validMove) {
+            state.nextPlayer();
         }
+        System.out.println("Was it a valid move? " + validMove);
+
+
+    }
+
+    /**
+     * Checks if there was a valid move in a direction
+     *
+     * @param row          - the current row
+     * @param col          - the current column
+     * @param rowIncrement - the direction were're checking row increment
+     * @param colIncrement - the direction were're checking row increment
+     * @param hitOpposite  - whether we've hit the opposite piece yet
+     * @return - boolean whether or not it was a valid move
+     */
+    private boolean checkDirection(int row, int col, int rowIncrement, int colIncrement, boolean hitOpposite) {
+
+        // Check if out of bounds
+        if (row + rowIncrement == BOARD_SIZE ||
+                row + rowIncrement < 0 ||
+                col + colIncrement == BOARD_SIZE ||
+                col + colIncrement < 0) {
+            return false;
+        }
+
+        int newRow = row + rowIncrement;
+        int newCol = col + colIncrement;
+
+        // Check for opposite color next to immediate
+        if (!hitOpposite && !state.getBoard()[newRow][newCol].equals(getOpposite(state.getCurrentPlayer()))) {
+            return false;
+        }
+
+        // If hit opposite and now other color, return true
+        if (hitOpposite && state.getBoard()[newRow][newCol].equals(state.getCurrentPlayer())) {
+            makeMove(row, col, -1 * rowIncrement, -1 * colIncrement);
+            return true;
+        }
+
+        return checkDirection(newRow, newCol, rowIncrement, colIncrement, true);
+
+    }
+
+    /**
+     * There was a valid move clicked, so make that move
+     *
+     * @param row          - the current row in consideration
+     * @param col          - the current column in consideration
+     * @param rowIncrement - backtrack row increment value
+     * @param colIncrement - backtrack column increment value
+     */
+    private void makeMove(int row, int col, int rowIncrement, int colIncrement) {
+        while (state.getBoard()[row][col].equals(getOpposite(state.getCurrentPlayer()))) {
+            state.getBoard()[row][col] = state.getCurrentPlayer();
+            row = row + rowIncrement;
+            col = col + colIncrement;
+        }
+        state.getBoard()[row][col] = state.getCurrentPlayer();
+        drawBoard();
+    }
+
+
+    /**
+     * Gets the opposite of the passed in piece
+     *
+     * @param piece - the piece to get the opposite of
+     * @return
+     */
+    private Piece getOpposite(Piece piece) {
+        return piece.equals(Piece.BLACK) ? Piece.WHITE : Piece.BLACK;
     }
 }
 
