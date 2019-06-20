@@ -270,12 +270,17 @@ public class Reversi {
             return false;
         }
 
-        // If hit opposite and now other color, return true
-        if (hitOpposite && state.getBoard()[newRow][newCol].equals(state.getCurrentPlayer())) {
-            if(!testMove) {
-                makeMove(row, col, -1 * rowIncrement, -1 * colIncrement);
+        // If hit opposite color, then check if the next color is our
+        if (hitOpposite) {
+            if(state.getBoard()[newRow][newCol].equals(state.getCurrentPlayer())) {
+                if(!testMove) {
+                    makeMove(row, col, -1 * rowIncrement, -1 * colIncrement);
+                }
+                return true;
+                // Make sure if we continue searching, we saw another opponent's piece
+            } else if(!state.getBoard()[newRow][newCol].equals(getOpposite(state.getCurrentPlayer()))) {
+                return false;
             }
-            return true;
         }
 
         return checkDirection(newRow, newCol, rowIncrement, colIncrement, true, testMove);
