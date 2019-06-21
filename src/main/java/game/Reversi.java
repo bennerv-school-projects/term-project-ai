@@ -6,6 +6,9 @@ import constants.ReversiConstants;
 import javax.imageio.ImageIO;
 import javax.swing.*;
 import java.awt.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
 
 
 public class Reversi {
@@ -130,10 +133,10 @@ public class Reversi {
     public void attemptMove(int row, int column) {
 
 
-        // Check to see if it's the AI's turn.
-        if (state.isComputerPlayer()) {
-            return;
-        }
+//        // Check to see if it's the AI's turn.
+//        if (state.isComputerPlayer()) {
+//            return;
+//        }
 
         // Make sure that the location we click on is a potential valid move
         if (!state.getBoard()[row][column].equals(Piece.POSSIBLE_MOVE)) {
@@ -141,14 +144,14 @@ public class Reversi {
         }
 
         // Check every direction for valid move
-        boolean validMove = checkDirection(state.getBoard(), row, column, -1, -1, false, false);
-        validMove = checkDirection(state.getBoard(), row, column, -1, 0, false, false) || validMove;
-        validMove = checkDirection(state.getBoard(), row, column, -1, 1, false, false) || validMove;
-        validMove = checkDirection(state.getBoard(), row, column, 0, 1, false, false) || validMove;
-        validMove = checkDirection(state.getBoard(), row, column, 1, 1, false, false) || validMove;
-        validMove = checkDirection(state.getBoard(), row, column, 1, 0, false, false) || validMove;
-        validMove = checkDirection(state.getBoard(), row, column, 1, -1, false, false) || validMove;
-        validMove = checkDirection(state.getBoard(), row, column, 0, -1, false, false) || validMove;
+        boolean validMove = checkDirection(state.getBoard(), state.getCurrentPlayer(), row, column, -1, -1, false, false);
+        validMove = checkDirection(state.getBoard(), state.getCurrentPlayer(), row, column, -1, 0, false, false) || validMove;
+        validMove = checkDirection(state.getBoard(), state.getCurrentPlayer(), row, column, -1, 1, false, false) || validMove;
+        validMove = checkDirection(state.getBoard(), state.getCurrentPlayer(), row, column, 0, 1, false, false) || validMove;
+        validMove = checkDirection(state.getBoard(), state.getCurrentPlayer(), row, column, 1, 1, false, false) || validMove;
+        validMove = checkDirection(state.getBoard(), state.getCurrentPlayer(), row, column, 1, 0, false, false) || validMove;
+        validMove = checkDirection(state.getBoard(), state.getCurrentPlayer(), row, column, 1, -1, false, false) || validMove;
+        validMove = checkDirection(state.getBoard(), state.getCurrentPlayer(), row, column, 0, -1, false, false) || validMove;
 
         // Finish the player's turn if the move is over
         if (validMove) {
@@ -164,7 +167,7 @@ public class Reversi {
     private void finishTurn() {
         state.changePlayer();
         clearPossibleMoves(state.getBoard());
-        markValidMoves(state.getBoard());
+        markValidMoves(state.getBoard(), state.getCurrentPlayer());
         drawBoard();
         checkFinished();
     }
@@ -173,7 +176,7 @@ public class Reversi {
      * Checks if there is a valid move at every board location.
      * Called after a player makes a move
      */
-    private void markValidMoves(Piece[][] board) {
+    private void markValidMoves(Piece[][] board, Piece player) {
         validMoves = 0;
         boolean validMove;
 
@@ -187,14 +190,14 @@ public class Reversi {
                 }
 
                 // Check every direction for valid
-                validMove = checkDirection(board, i, j, -1, -1, false, true);
-                validMove = validMove || checkDirection(board, i, j, -1, 0, false, true);
-                validMove = validMove || checkDirection(board, i, j, -1, 1, false, true);
-                validMove = validMove || checkDirection(board, i, j, 0, 1, false, true);
-                validMove = validMove || checkDirection(board, i, j, 1, 1, false, true);
-                validMove = validMove || checkDirection(board, i, j, 1, 0, false, true);
-                validMove = validMove || checkDirection(board, i, j, 1, -1, false, true);
-                validMove = validMove || checkDirection(board, i, j, 0, -1, false, true);
+                validMove = checkDirection(board, player, i, j, -1, -1, false, true);
+                validMove = validMove || checkDirection(board, player, i, j, -1, 0, false, true);
+                validMove = validMove || checkDirection(board, player, i, j, -1, 1, false, true);
+                validMove = validMove || checkDirection(board, player, i, j, 0, 1, false, true);
+                validMove = validMove || checkDirection(board, player, i, j, 1, 1, false, true);
+                validMove = validMove || checkDirection(board, player, i, j, 1, 0, false, true);
+                validMove = validMove || checkDirection(board, player, i, j, 1, -1, false, true);
+                validMove = validMove || checkDirection(board, player, i, j, 0, -1, false, true);
 
                 if (validMove) {
                     System.out.println(i + ", " + j + " is a valid move");
@@ -267,7 +270,7 @@ public class Reversi {
      * @param hitOpposite  - whether we've hit the opposite piece yet
      * @return - boolean whether or not it was a valid move
      */
-    private boolean checkDirection(Piece[][] board, int row, int col, int rowIncrement, int colIncrement, boolean hitOpposite, boolean testMove) {
+    private boolean checkDirection(Piece[][] board, Piece player, int row, int col, int rowIncrement, int colIncrement, boolean hitOpposite, boolean testMove) {
 
         // Check if out of bounds
         if (row + rowIncrement == BOARD_SIZE ||
@@ -281,24 +284,24 @@ public class Reversi {
         int newCol = col + colIncrement;
 
         // Check for opposite color next to immediate
-        if (!hitOpposite && !board[newRow][newCol].equals(getOpposite(state.getCurrentPlayer()))) {
+        if (!hitOpposite && !board[newRow][newCol].equals(getOpposite(player))) {
             return false;
         }
 
         // If hit opposite color, then check if the next color is our
         if (hitOpposite) {
-            if (board[newRow][newCol].equals(state.getCurrentPlayer())) {
+            if (board[newRow][newCol].equals(player)) {
                 if (!testMove) {
-                    makeMove(board, row, col, -1 * rowIncrement, -1 * colIncrement);
+                    makeMove(board, player, row, col, -1 * rowIncrement, -1 * colIncrement);
                 }
                 return true;
                 // Make sure if we continue searching, we saw another opponent's piece
-            } else if (!board[newRow][newCol].equals(getOpposite(state.getCurrentPlayer()))) {
+            } else if (!board[newRow][newCol].equals(getOpposite(player))) {
                 return false;
             }
         }
 
-        return checkDirection(board, newRow, newCol, rowIncrement, colIncrement, true, testMove);
+        return checkDirection(board, player, newRow, newCol, rowIncrement, colIncrement, true, testMove);
 
     }
 
@@ -311,13 +314,13 @@ public class Reversi {
      * @param rowIncrement - backtrack row increment value
      * @param colIncrement - backtrack column increment value
      */
-    private void makeMove(Piece[][] board, int row, int col, int rowIncrement, int colIncrement) {
-        while (board[row][col].equals(getOpposite(state.getCurrentPlayer()))) {
-            board[row][col] = state.getCurrentPlayer();
+    private void makeMove(Piece[][] board, Piece player, int row, int col, int rowIncrement, int colIncrement) {
+        while (board[row][col].equals(getOpposite(player))) {
+            board[row][col] = player;
             row = row + rowIncrement;
             col = col + colIncrement;
         }
-        board[row][col] = state.getCurrentPlayer();
+        board[row][col] = player;
     }
 
 
@@ -331,13 +334,47 @@ public class Reversi {
         return piece.equals(Piece.BLACK) ? Piece.WHITE : Piece.BLACK;
     }
 
-//    private int minimax(int depth, int row, int col, boolean isMax, Piece[][] board) {
+//    /**
+//     * Recursive minimax function
+//     *
+//     * @param depth - current depth of the tree
+//     * @param isMax - if we're maximizing the tree currently
+//     * @param board - the board object
+//     * @param player - the current moving player for the given board object
+//     * @return
+//     */
+//    private int minimax(int depth, boolean isMax, Piece[][] board, Piece player) {
 //        if (depth == ReversiConstants.MINIMAX_DEPTH) {
-//            return countPieces(board);
+//            return staticEvaluation_CountPieces(board);
 //        }
 //
-//        // Find children (valid moves) of the current board object
+//        ArrayList<Piece[][]> children = new ArrayList<>();
 //
+//        // Find children (valid moves) of the current board object
+//        for (int i = 0; i < board.length; i++) {
+//            for (int j = 0; j < board.length; j++) {
+//                if (board[i][j].equals(Piece.POSSIBLE_MOVE)) {
+//                    Piece[][] child = board.clone();
+//
+//                    // Go through every possible direction and make the move on the board
+//                    checkDirection(child, player, i, j, -1, -1, false, false);
+//                    checkDirection(child, player, i, j, -1, 0, false, false);
+//                    checkDirection(child, player, i, j, -1, 1, false, false);
+//                    checkDirection(child, player, i, j, 0, 1, false, false);
+//                    checkDirection(child, player, i, j, 1, 1, false, false);
+//                    checkDirection(child, player, i, j, 1, 0, false, false);
+//                    checkDirection(child, player, i, j, 1, -1, false, false);
+//                    checkDirection(child, player, i, j, 0, -1, false, false);
+//
+//                    // Mark the valid moves on the new child with the new player
+//                    markValidMoves(child);
+//
+//                    // Add to List of children
+//                    children.add(child);
+//
+//                }
+//            }
+//        }
 //
 //        if (isMax) {
 //            return
