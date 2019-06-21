@@ -7,8 +7,8 @@ import javax.imageio.ImageIO;
 import javax.swing.*;
 import java.awt.*;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collections;
+import java.util.stream.Collectors;
 
 
 public class Reversi {
@@ -133,10 +133,10 @@ public class Reversi {
     public void attemptMove(int row, int column) {
 
 
-//        // Check to see if it's the AI's turn.
-//        if (state.isComputerPlayer()) {
-//            return;
-//        }
+        // Check to see if it's the AI's turn.
+        if (state.isComputerPlayer()) {
+            return;
+        }
 
         // Make sure that the location we click on is a potential valid move
         if (!state.getBoard()[row][column].equals(Piece.POSSIBLE_MOVE)) {
@@ -166,10 +166,15 @@ public class Reversi {
      */
     private void finishTurn() {
         state.changePlayer();
-        clearPossibleMoves(state.getBoard());
+        clearValidMoves(state.getBoard());
         markValidMoves(state.getBoard(), state.getCurrentPlayer());
         drawBoard();
         checkFinished();
+
+        // AI Move turn
+        if(state.isComputerPlayer()) {
+            System.out.println("Minimax for this board state is: " + minimax(0, true, state.getBoard(), state.getCurrentPlayer()));
+        }
     }
 
     /**
@@ -250,7 +255,7 @@ public class Reversi {
      * Clears out any possible moves on the game board.
      * Called when a player makes a move
      */
-    private void clearPossibleMoves(Piece[][] board) {
+    private void clearValidMoves(Piece[][] board) {
         for (int i = 0; i < board.length; i++) {
             for (int j = 0; j < board.length; j++) {
                 if (board[i][j].equals(Piece.POSSIBLE_MOVE)) {
@@ -328,70 +333,73 @@ public class Reversi {
      * Gets the opposite of the passed in piece
      *
      * @param piece - the piece to get the opposite of
-     * @return
+     * @return the opposite piece of the passed im param
      */
     private Piece getOpposite(Piece piece) {
         return piece.equals(Piece.BLACK) ? Piece.WHITE : Piece.BLACK;
     }
 
-//    /**
-//     * Recursive minimax function
-//     *
-//     * @param depth - current depth of the tree
-//     * @param isMax - if we're maximizing the tree currently
-//     * @param board - the board object
-//     * @param player - the current moving player for the given board object
-//     * @return
-//     */
-//    private int minimax(int depth, boolean isMax, Piece[][] board, Piece player) {
-//        if (depth == ReversiConstants.MINIMAX_DEPTH) {
-//            return staticEvaluation_CountPieces(board);
-//        }
-//
-//        ArrayList<Piece[][]> children = new ArrayList<>();
-//
-//        // Find children (valid moves) of the current board object
-//        for (int i = 0; i < board.length; i++) {
-//            for (int j = 0; j < board.length; j++) {
-//                if (board[i][j].equals(Piece.POSSIBLE_MOVE)) {
-//                    Piece[][] child = board.clone();
-//
-//                    // Go through every possible direction and make the move on the board
-//                    checkDirection(child, player, i, j, -1, -1, false, false);
-//                    checkDirection(child, player, i, j, -1, 0, false, false);
-//                    checkDirection(child, player, i, j, -1, 1, false, false);
-//                    checkDirection(child, player, i, j, 0, 1, false, false);
-//                    checkDirection(child, player, i, j, 1, 1, false, false);
-//                    checkDirection(child, player, i, j, 1, 0, false, false);
-//                    checkDirection(child, player, i, j, 1, -1, false, false);
-//                    checkDirection(child, player, i, j, 0, -1, false, false);
-//
-//                    // Mark the valid moves on the new child with the new player
-//                    markValidMoves(child);
-//
-//                    // Add to List of children
-//                    children.add(child);
-//
-//                }
-//            }
-//        }
-//
-//        if (isMax) {
-//            return
-//        } else {
-//            return Collections.min(Arrays.asList(
-//                    minimax(depth + 1, )
-//
-//            ));
-//        }
-//    }
+    /**
+     * Recursive minimax function
+     *
+     * @param depth - current depth of the tree
+     * @param isMax - if we're maximizing the tree currently
+     * @param board - the board object
+     * @param player - the current moving player for the given board object
+     * @return - an integer representing the minimax output
+     */
+    private int minimax(int depth, boolean isMax, Piece[][] board, Piece player) {
+        if (depth == ReversiConstants.MINIMAX_DEPTH) {
+            return staticEvaluation_CountPieces(board);
+        }
+
+        ArrayList<Piece[][]> children = new ArrayList<>();
+
+        // Find children (valid moves) of the current board object
+        for (int i = 0; i < board.length; i++) {
+            for (int j = 0; j < board.length; j++) {
+                if (board[i][j].equals(Piece.POSSIBLE_MOVE)) {
+                    Piece[][] child = board.clone();
+
+                    // Go through every possible direction and make the move on the board
+                    checkDirection(child, player, i, j, -1, -1, false, false);
+                    checkDirection(child, player, i, j, -1, 0, false, false);
+                    checkDirection(child, player, i, j, -1, 1, false, false);
+                    checkDirection(child, player, i, j, 0, 1, false, false);
+                    checkDirection(child, player, i, j, 1, 1, false, false);
+                    checkDirection(child, player, i, j, 1, 0, false, false);
+                    checkDirection(child, player, i, j, 1, -1, false, false);
+                    checkDirection(child, player, i, j, 0, -1, false, false);
+
+
+                    // Clear, then mark the valid moves on the new child with the new player
+                    clearValidMoves(child);
+                    markValidMoves(child, getOpposite(player));
+
+                    // Add to List of children
+                    children.add(child);
+
+                }
+            }
+        }
+
+        // Switch player
+        final Piece nextPlayer = getOpposite(player);
+
+        // Maximize/minimize functions for every player
+        if (isMax) {
+            return Collections.max(children.stream().map(child -> minimax(depth + 1, false, child, nextPlayer)).collect(Collectors.toList()));
+        } else {
+            return Collections.min(children.stream().map(child -> minimax(depth + 1, true, child, nextPlayer)).collect(Collectors.toList()));
+        }
+    }
 
 
     /**
      * Static evaluation function which counts the pieces of the current player vs the other player's pieces
      *
      * @param board - the board
-     * @return
+     * @return (total current player pieces - total opposite player pieces)
      */
     private int staticEvaluation_CountPieces(Piece[][] board) {
         int score = 0;
@@ -399,7 +407,7 @@ public class Reversi {
             for (int j = 0; j < board.length; j++) {
                 if (board[i][j].equals(state.getCurrentPlayer())) {
                     score++;
-                } else {
+                } else if(board[i][j].equals(getOpposite(state.getCurrentPlayer()))) {
                     score--;
                 }
             }

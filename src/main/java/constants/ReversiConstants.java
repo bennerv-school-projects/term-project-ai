@@ -6,5 +6,5 @@ public class ReversiConstants {
 
     public static final String COLUMN = "COLUMN";
 
-    public static final int MINIMAX_DEPTH = 1;
+    public static final int MINIMAX_DEPTH = 3;
 }
