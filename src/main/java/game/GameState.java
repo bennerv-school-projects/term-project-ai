@@ -8,6 +8,7 @@ public class GameState {
 
     private Piece currentPlayer;
     private Piece[][] board;
+    private Piece computerPlayer = Piece.WHITE;
 
     /**
      * Holds the game state of the current game
@@ -27,7 +28,9 @@ public class GameState {
         this.board[4][3] = Piece.BLACK;
         this.board[4][4] = Piece.WHITE;
 
-        currentPlayer = Piece.BLACK;
+        // Initial piece to move is BLACK, but finishTurn is called after initialization,
+        // making WHITE switch to BLACK
+        currentPlayer = Piece.WHITE;
     }
 
     /**
@@ -53,7 +56,7 @@ public class GameState {
      *
      * @return The next player to move
      */
-    public Piece nextPlayer() {
+    public Piece changePlayer() {
         if (currentPlayer.equals(Piece.BLACK)) {
             currentPlayer = Piece.WHITE;
         } else {
@@ -61,5 +64,13 @@ public class GameState {
         }
 
         return currentPlayer;
+    }
+
+    /**
+     * Returns if the current player moving is the computer
+     * @return - true if the current player is the computer, else false
+     */
+    public boolean isComputerPlayer() {
+        return getCurrentPlayer().equals(this.computerPlayer);
     }
 }

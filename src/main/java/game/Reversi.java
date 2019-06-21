@@ -6,9 +6,7 @@ import constants.ReversiConstants;
 import javax.imageio.ImageIO;
 import javax.swing.*;
 import java.awt.*;
-import java.awt.event.WindowEvent;
-import java.awt.event.WindowListener;
-import java.util.Arrays;
+
 
 public class Reversi {
 
@@ -58,6 +56,7 @@ public class Reversi {
      */
     private void newGame() {
 
+        System.out.println("Starting new game");
 
         // Initialize the Board
         gui.getContentPane().removeAll();
@@ -86,9 +85,7 @@ public class Reversi {
             }
         }
 
-        // draw the board
-        markValidMoves();
-        drawBoard();
+        finishTurn();
     }
 
     /**
@@ -132,78 +129,96 @@ public class Reversi {
      */
     public void attemptMove(int row, int column) {
 
-        if(!state.getBoard()[row][column].equals(Piece.POSSIBLE_MOVE)) {
+
+        // Check to see if it's the AI's turn.
+        if (state.isComputerPlayer()) {
+            return;
+        }
+
+        // Make sure that the location we click on is a potential valid move
+        if (!state.getBoard()[row][column].equals(Piece.POSSIBLE_MOVE)) {
             return;
         }
 
         // Check every direction for valid move
-        boolean validMove = checkDirection(row, column, -1, -1, false, false);
-        validMove = checkDirection(row, column, -1, 0, false, false) || validMove;
-        validMove = checkDirection(row, column, -1, 1, false, false) || validMove;
-        validMove = checkDirection(row, column, 0, 1, false, false) || validMove;
-        validMove = checkDirection(row, column, 1, 1, false, false) || validMove;
-        validMove = checkDirection(row, column, 1, 0, false, false) || validMove;
-        validMove = checkDirection(row, column, 1, -1, false, false) || validMove;
-        validMove = checkDirection(row, column, 0, -1, false, false) || validMove;
+        boolean validMove = checkDirection(state.getBoard(), row, column, -1, -1, false, false);
+        validMove = checkDirection(state.getBoard(), row, column, -1, 0, false, false) || validMove;
+        validMove = checkDirection(state.getBoard(), row, column, -1, 1, false, false) || validMove;
+        validMove = checkDirection(state.getBoard(), row, column, 0, 1, false, false) || validMove;
+        validMove = checkDirection(state.getBoard(), row, column, 1, 1, false, false) || validMove;
+        validMove = checkDirection(state.getBoard(), row, column, 1, 0, false, false) || validMove;
+        validMove = checkDirection(state.getBoard(), row, column, 1, -1, false, false) || validMove;
+        validMove = checkDirection(state.getBoard(), row, column, 0, -1, false, false) || validMove;
 
-        // Do checks if the move was valid
+        // Finish the player's turn if the move is over
         if (validMove) {
-            state.nextPlayer();
-            clearPossibleMoves();
-            markValidMoves();
-            drawBoard();
-            checkFinished();
+            finishTurn();
         }
+    }
+
+    /**
+     * Called on each valid move or initial start of the board.
+     * Changes the player, clears the possible moves,
+     * marks valid moves in yellow, draws the board, and then finally checks if the game is over
+     */
+    private void finishTurn() {
+        state.changePlayer();
+        clearPossibleMoves(state.getBoard());
+        markValidMoves(state.getBoard());
+        drawBoard();
+        checkFinished();
     }
 
     /**
      * Checks if there is a valid move at every board location.
      * Called after a player makes a move
      */
-    private void markValidMoves() {
+    private void markValidMoves(Piece[][] board) {
         validMoves = 0;
         boolean validMove;
 
         // Loop through every board location
-        for(int i = 0; i < BOARD_SIZE; i++) {
-            for(int j = 0; j < BOARD_SIZE; j++) {
+        for (int i = 0; i < board.length; i++) {
+            for (int j = 0; j < board.length; j++) {
 
                 // If this piece is not none, continue on
-                if(!state.getBoard()[i][j].equals(Piece.NONE)) {
+                if (!board[i][j].equals(Piece.NONE)) {
                     continue;
                 }
 
                 // Check every direction for valid
-                validMove = checkDirection(i, j, -1, -1, false, true);
-                validMove = validMove || checkDirection(i, j, -1, 0, false, true);
-                validMove = validMove || checkDirection(i, j, -1, 1, false, true);
-                validMove = validMove || checkDirection(i, j, 0, 1, false, true);
-                validMove = validMove || checkDirection(i, j, 1, 1, false, true);
-                validMove = validMove || checkDirection(i, j, 1, 0, false, true);
-                validMove = validMove || checkDirection(i, j, 1, -1, false, true);
-                validMove = validMove || checkDirection(i, j, 0, -1, false, true);
+                validMove = checkDirection(board, i, j, -1, -1, false, true);
+                validMove = validMove || checkDirection(board, i, j, -1, 0, false, true);
+                validMove = validMove || checkDirection(board, i, j, -1, 1, false, true);
+                validMove = validMove || checkDirection(board, i, j, 0, 1, false, true);
+                validMove = validMove || checkDirection(board, i, j, 1, 1, false, true);
+                validMove = validMove || checkDirection(board, i, j, 1, 0, false, true);
+                validMove = validMove || checkDirection(board, i, j, 1, -1, false, true);
+                validMove = validMove || checkDirection(board, i, j, 0, -1, false, true);
 
-                if(validMove) {
-                    state.getBoard()[i][j] = Piece.POSSIBLE_MOVE;
+                if (validMove) {
+                    System.out.println(i + ", " + j + " is a valid move");
+                    board[i][j] = Piece.POSSIBLE_MOVE;
                     validMoves += 1;
                 }
             }
         }
+        System.out.println("There are " + validMoves + " valid moves");
+
     }
 
     private void checkFinished() {
 
         // If the number of valid moves is zero, the game is over
-        if(validMoves == 0) {
-
+        if (validMoves == 0) {
             System.out.println("No valid moves left.  Game over");
 
             int blackPieces = 0, whitePieces = 0;
 
             // Count the number of pieces
-            for(int i = 0; i < BOARD_SIZE; i++) {
-                for(int j = 0; j < BOARD_SIZE; j++) {
-                    switch(state.getBoard()[i][j]) {
+            for (int i = 0; i < BOARD_SIZE; i++) {
+                for (int j = 0; j < BOARD_SIZE; j++) {
+                    switch (state.getBoard()[i][j]) {
                         case BLACK:
                             blackPieces++;
                             break;
@@ -215,7 +230,7 @@ public class Reversi {
             }
 
             String message;
-            if(blackPieces > whitePieces) {
+            if (blackPieces > whitePieces) {
                 message = "Black wins: " + blackPieces + " to " + whitePieces;
             } else {
                 message = "White wins: " + whitePieces + " to " + blackPieces;
@@ -232,11 +247,11 @@ public class Reversi {
      * Clears out any possible moves on the game board.
      * Called when a player makes a move
      */
-    private void clearPossibleMoves() {
-        for(int i = 0; i < BOARD_SIZE; i++) {
-            for(int j = 0; j < BOARD_SIZE; j++) {
-                if(state.getBoard()[i][j].equals(Piece.POSSIBLE_MOVE)) {
-                    state.getBoard()[i][j] = Piece.NONE;
+    private void clearPossibleMoves(Piece[][] board) {
+        for (int i = 0; i < board.length; i++) {
+            for (int j = 0; j < board.length; j++) {
+                if (board[i][j].equals(Piece.POSSIBLE_MOVE)) {
+                    board[i][j] = Piece.NONE;
                 }
             }
         }
@@ -252,7 +267,7 @@ public class Reversi {
      * @param hitOpposite  - whether we've hit the opposite piece yet
      * @return - boolean whether or not it was a valid move
      */
-    private boolean checkDirection(int row, int col, int rowIncrement, int colIncrement, boolean hitOpposite, boolean testMove) {
+    private boolean checkDirection(Piece[][] board, int row, int col, int rowIncrement, int colIncrement, boolean hitOpposite, boolean testMove) {
 
         // Check if out of bounds
         if (row + rowIncrement == BOARD_SIZE ||
@@ -266,42 +281,43 @@ public class Reversi {
         int newCol = col + colIncrement;
 
         // Check for opposite color next to immediate
-        if (!hitOpposite && !state.getBoard()[newRow][newCol].equals(getOpposite(state.getCurrentPlayer()))) {
+        if (!hitOpposite && !board[newRow][newCol].equals(getOpposite(state.getCurrentPlayer()))) {
             return false;
         }
 
         // If hit opposite color, then check if the next color is our
         if (hitOpposite) {
-            if(state.getBoard()[newRow][newCol].equals(state.getCurrentPlayer())) {
-                if(!testMove) {
-                    makeMove(row, col, -1 * rowIncrement, -1 * colIncrement);
+            if (board[newRow][newCol].equals(state.getCurrentPlayer())) {
+                if (!testMove) {
+                    makeMove(board, row, col, -1 * rowIncrement, -1 * colIncrement);
                 }
                 return true;
                 // Make sure if we continue searching, we saw another opponent's piece
-            } else if(!state.getBoard()[newRow][newCol].equals(getOpposite(state.getCurrentPlayer()))) {
+            } else if (!board[newRow][newCol].equals(getOpposite(state.getCurrentPlayer()))) {
                 return false;
             }
         }
 
-        return checkDirection(newRow, newCol, rowIncrement, colIncrement, true, testMove);
+        return checkDirection(board, newRow, newCol, rowIncrement, colIncrement, true, testMove);
 
     }
 
     /**
      * There was a valid move clicked, so make that move
      *
+     * @param board        - the current game board
      * @param row          - the current row in consideration
      * @param col          - the current column in consideration
      * @param rowIncrement - backtrack row increment value
      * @param colIncrement - backtrack column increment value
      */
-    private void makeMove(int row, int col, int rowIncrement, int colIncrement) {
-        while (state.getBoard()[row][col].equals(getOpposite(state.getCurrentPlayer()))) {
-            state.getBoard()[row][col] = state.getCurrentPlayer();
+    private void makeMove(Piece[][] board, int row, int col, int rowIncrement, int colIncrement) {
+        while (board[row][col].equals(getOpposite(state.getCurrentPlayer()))) {
+            board[row][col] = state.getCurrentPlayer();
             row = row + rowIncrement;
             col = col + colIncrement;
         }
-        state.getBoard()[row][col] = state.getCurrentPlayer();
+        board[row][col] = state.getCurrentPlayer();
     }
 
 
@@ -313,6 +329,46 @@ public class Reversi {
      */
     private Piece getOpposite(Piece piece) {
         return piece.equals(Piece.BLACK) ? Piece.WHITE : Piece.BLACK;
+    }
+
+//    private int minimax(int depth, int row, int col, boolean isMax, Piece[][] board) {
+//        if (depth == ReversiConstants.MINIMAX_DEPTH) {
+//            return countPieces(board);
+//        }
+//
+//        // Find children (valid moves) of the current board object
+//
+//
+//        if (isMax) {
+//            return
+//        } else {
+//            return Collections.min(Arrays.asList(
+//                    minimax(depth + 1, )
+//
+//            ));
+//        }
+//    }
+
+
+    /**
+     * Static evaluation function which counts the pieces of the current player vs the other player's pieces
+     *
+     * @param board - the board
+     * @return
+     */
+    private int staticEvaluation_CountPieces(Piece[][] board) {
+        int score = 0;
+        for (int i = 0; i < board.length; i++) {
+            for (int j = 0; j < board.length; j++) {
+                if (board[i][j].equals(state.getCurrentPlayer())) {
+                    score++;
+                } else {
+                    score--;
+                }
+            }
+        }
+
+        return score;
     }
 }
 
