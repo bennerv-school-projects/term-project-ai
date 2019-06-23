@@ -159,11 +159,16 @@ public class Reversi {
         clearValidMoves(state.getBoard());
         int validMoves = markValidMoves(state.getBoard(), state.getCurrentPlayer());
         drawBoard();
-        checkFinished(validMoves);
+
+        // If we need to swap players because the current new player doesn't have a valid move,
+        // then call finishTurn again and return from this finishTurn() call
+        if(checkFinished(validMoves)) {
+            finishTurn();
+            return;
+        }
 
         // AI Move turn
         if (state.isComputerPlayer()) {
-            System.out.printf("\nCALLING MINIMAX\n");
             Move bestMove = minimax(0, true, state.getBoard(), state.getCurrentPlayer());
             System.out.println("Minimax score for current board is: " + bestMove.getScore() + " row: " + bestMove.getRow() + " column: " + bestMove.getColumn());
 
@@ -211,40 +216,63 @@ public class Reversi {
 
     }
 
-    private void checkFinished(int validMoves) {
+    /**
+     * Check if the game is finished and display a box showing the score if it is.
+     *
+     * A game is defined as being over if all pieces are played or neither player can make any move.
+     * If one player is unable to move, the game is not over as long as the other player can make a
+     * valid move.
+     *
+     * @param validMoves - the number of valid moves left on the board for the current player
+     * @return - returns true if the players need to be switched as there is no valid move
+     *           for the current player
+     */
+    private boolean checkFinished(int validMoves) {
 
-        // If the number of valid moves is zero, the game is over
+        // If the number of valid moves is zero for the current player, check the other player
         if (validMoves == 0) {
-            System.out.println("No valid moves left.  Game over");
 
-            int blackPieces = 0, whitePieces = 0;
+            Piece[][] boardCopy = makeCopy(state.getBoard());
+            int otherPlayerValidMoves = markValidMoves(boardCopy, getOpposite(state.getCurrentPlayer()));
 
-            // Count the number of pieces
-            for (int i = 0; i < BOARD_SIZE; i++) {
-                for (int j = 0; j < BOARD_SIZE; j++) {
-                    switch (state.getBoard()[i][j]) {
-                        case BLACK:
-                            blackPieces++;
-                            break;
-                        case WHITE:
-                            whitePieces++;
-                            break;
+            // If both players have zero moves left, then the game is over
+            if(otherPlayerValidMoves == 0) {
+
+                System.out.println("No valid moves left.  Game over");
+
+                int blackPieces = 0, whitePieces = 0;
+
+                // Count the number of pieces
+                for (int i = 0; i < BOARD_SIZE; i++) {
+                    for (int j = 0; j < BOARD_SIZE; j++) {
+                        switch (state.getBoard()[i][j]) {
+                            case BLACK:
+                                blackPieces++;
+                                break;
+                            case WHITE:
+                                whitePieces++;
+                                break;
+                        }
                     }
                 }
-            }
 
-            String message;
-            if (blackPieces > whitePieces) {
-                message = "Black wins: " + blackPieces + " to " + whitePieces;
+                String message;
+                if (blackPieces > whitePieces) {
+                    message = "Black wins: " + blackPieces + " to " + whitePieces;
+                } else {
+                    message = "White wins: " + whitePieces + " to " + blackPieces;
+                }
+
+                message += " click OK or close to play a new game";
+
+                JOptionPane.showMessageDialog(gui, message);
+                newGame();
             } else {
-                message = "White wins: " + whitePieces + " to " + blackPieces;
+                System.out.println("No valid moves for the current player.  Swapping players");
+                return true;
             }
-
-            message += " click OK or close to play a new game";
-
-            JOptionPane.showMessageDialog(gui, message);
-            newGame();
         }
+        return false;
     }
 
     /**
@@ -462,5 +490,7 @@ public class Reversi {
         }
         return score;
     }
+
+//    private int staticEvaluation_CheckMobility()
 }
 
