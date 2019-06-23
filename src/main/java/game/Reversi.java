@@ -7,8 +7,6 @@ import javax.imageio.ImageIO;
 import javax.swing.*;
 import java.awt.*;
 import java.util.ArrayList;
-import java.util.Collections;
-import java.util.stream.Collectors;
 
 
 public class Reversi {
@@ -19,12 +17,11 @@ public class Reversi {
     private JFrame gui;
     private Image blackPiece;
     private Image whitePiece;
-    private int validMoves;
 
     private GameState state;
 
     /**
-     * Sets up the game and beings execution
+     * Sets up the game and begins execution
      */
     public Reversi() {
         gui = new JFrame();
@@ -129,7 +126,7 @@ public class Reversi {
      * @param row    - row to place piece at
      * @param column - column to place piece at
      */
-    public void attemptMove(int row, int column) {
+    void attemptMove(int row, int column) {
 
         // Make sure that the location we click on is a potential valid move
         if (!state.getBoard()[row][column].equals(Piece.POSSIBLE_MOVE)) {
@@ -160,9 +157,9 @@ public class Reversi {
     private void finishTurn() {
         state.changePlayer();
         clearValidMoves(state.getBoard());
-        markValidMoves(state.getBoard(), state.getCurrentPlayer());
+        int validMoves = markValidMoves(state.getBoard(), state.getCurrentPlayer());
         drawBoard();
-        checkFinished();
+        checkFinished(validMoves);
 
         // AI Move turn
         if (state.isComputerPlayer()) {
@@ -179,8 +176,8 @@ public class Reversi {
      * Checks if there is a valid move at every board location.
      * Called after a player makes a move
      */
-    private void markValidMoves(Piece[][] board, Piece player) {
-        validMoves = 0;
+    private int markValidMoves(Piece[][] board, Piece player) {
+        int validMoves = 0;
         boolean validMove;
 
         // Loop through every board location
@@ -210,10 +207,11 @@ public class Reversi {
             }
         }
 //        System.out.println("There are " + validMoves + " valid moves");
+        return validMoves;
 
     }
 
-    private void checkFinished() {
+    private void checkFinished(int validMoves) {
 
         // If the number of valid moves is zero, the game is over
         if (validMoves == 0) {
@@ -462,7 +460,6 @@ public class Reversi {
                 }
             }
         }
-
         return score;
     }
 }
