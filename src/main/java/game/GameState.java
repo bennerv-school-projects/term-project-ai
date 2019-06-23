@@ -12,6 +12,7 @@ public class GameState {
 
     /**
      * Holds the game state of the current game
+     *
      * @param boardSize - the size of the game board
      */
     public GameState(int boardSize) {
@@ -68,6 +69,7 @@ public class GameState {
 
     /**
      * Returns if the current player moving is the computer
+     *
      * @return - true if the current player is the computer, else false
      */
     public boolean isComputerPlayer() {

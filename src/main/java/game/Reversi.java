@@ -172,7 +172,7 @@ public class Reversi {
         checkFinished();
 
         // AI Move turn
-        if(state.isComputerPlayer()) {
+        if (state.isComputerPlayer()) {
             System.out.printf("\nCALLING MINIMAX\n");
             Move bestMove = minimax(0, true, state.getBoard(), state.getCurrentPlayer());
             System.out.println("Minimax score for current board is: " + bestMove.getScore() + " row: " + bestMove.getRow() + " column: " + bestMove.getColumn());
@@ -207,13 +207,13 @@ public class Reversi {
                 validMove = validMove || checkDirection(board, player, i, j, 0, -1, false, true);
 
                 if (validMove) {
-                    System.out.println(i + ", " + j + " is a valid move");
+//                    System.out.println(i + ", " + j + " is a valid move");
                     board[i][j] = Piece.POSSIBLE_MOVE;
                     validMoves += 1;
                 }
             }
         }
-        System.out.println("There are " + validMoves + " valid moves");
+//        System.out.println("There are " + validMoves + " valid moves");
 
     }
 
@@ -344,9 +344,9 @@ public class Reversi {
     /**
      * Recursive minimax function
      *
-     * @param depth - current depth of the tree
-     * @param isMax - if we're maximizing the tree currently
-     * @param board - the board object
+     * @param depth  - current depth of the tree
+     * @param isMax  - if we're maximizing the tree currently
+     * @param board  - the board object
      * @param player - the current moving player for the given board object
      * @return - an integer representing the minimax output
      */
@@ -379,7 +379,7 @@ public class Reversi {
                     markValidMoves(child, getOpposite(player));
 
                     Move validBoardMove;
-                    if(isMax) {
+                    if (isMax) {
                         validBoardMove = new Move(board, Integer.MIN_VALUE, i, j);
                     } else {
                         validBoardMove = new Move(board, Integer.MAX_VALUE, i, j);
@@ -396,7 +396,7 @@ public class Reversi {
         // Default move values
         Move bestMove;
 
-        if(isMax) {
+        if (isMax) {
             bestMove = new Move(Integer.MIN_VALUE, -1, -1);
         } else {
             bestMove = new Move(Integer.MAX_VALUE, -1, -1);
@@ -406,12 +406,12 @@ public class Reversi {
         Piece nextPlayer = getOpposite(player);
 
         // Go through every valid board move
-        for(Move childBoardMove : children) {
+        for (Move childBoardMove : children) {
 
             // Maximize / minimize as necessary
             if (isMax) {
                 Move move = minimax(depth + 1, false, childBoardMove.getBoard(), nextPlayer);
-                if(move.getScore() > bestMove.getScore()) {
+                if (move.getScore() > bestMove.getScore()) {
                     bestMove.setRow(childBoardMove.getRow());
                     bestMove.setColumn(childBoardMove.getColumn());
                     bestMove.setScore(move.getScore());
@@ -432,13 +432,14 @@ public class Reversi {
 
     /**
      * Make a copy of the game board
+     *
      * @param board - the board to copy
      * @return - a copy of the board passed in
      */
     private Piece[][] makeCopy(Piece[][] board) {
         Piece[][] newBoard = new Piece[board.length][board.length];
-        for(int i = 0; i < board.length; i++) {
-            for(int j = 0; j < board.length; j++) {
+        for (int i = 0; i < board.length; i++) {
+            for (int j = 0; j < board.length; j++) {
                 newBoard[i][j] = board[i][j];
             }
         }
@@ -458,7 +459,7 @@ public class Reversi {
             for (int j = 0; j < board.length; j++) {
                 if (board[i][j].equals(state.getCurrentPlayer())) {
                     score++;
-                } else if(board[i][j].equals(getOpposite(state.getCurrentPlayer()))) {
+                } else if (board[i][j].equals(getOpposite(state.getCurrentPlayer()))) {
                     score--;
                 }
             }
