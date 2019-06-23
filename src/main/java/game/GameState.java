@@ -1,6 +1,7 @@
 package game;
 
 import constants.Piece;
+import constants.ReversiConstants;
 
 import java.util.Arrays;
 
@@ -15,7 +16,7 @@ public class GameState {
      *
      * @param boardSize - the size of the game board
      */
-    public GameState(int boardSize) {
+    GameState(int boardSize) {
         this.board = new Piece[boardSize][boardSize];
 
         // Fill the board with nothing
@@ -39,7 +40,7 @@ public class GameState {
      *
      * @return The game board
      */
-    public Piece[][] getBoard() {
+    Piece[][] getBoard() {
         return this.board;
     }
 
@@ -48,31 +49,31 @@ public class GameState {
      *
      * @return the current player
      */
-    public Piece getCurrentPlayer() {
+    Piece getCurrentPlayer() {
         return this.currentPlayer;
     }
 
     /**
      * Swaps the current player
-     *
-     * @return The next player to move
      */
-    public Piece changePlayer() {
+    void changePlayer() {
         if (currentPlayer.equals(Piece.BLACK)) {
             currentPlayer = Piece.WHITE;
         } else {
             currentPlayer = Piece.BLACK;
         }
-
-        return currentPlayer;
     }
 
     /**
-     * Returns if the current player moving is the computer
+     * Returns true if the current player moving is an AI
      *
-     * @return - true if the current player is the computer, else false
+     * @return - true if the current player is an AI/Computer, else false
      */
     public boolean isComputerPlayer() {
-        return getCurrentPlayer().equals(this.computerPlayer);
+        if(ReversiConstants.NUMBER_OF_AI > 1) {
+            return true;
+        } else {
+            return this.getCurrentPlayer().equals(computerPlayer);
+        }
     }
 }

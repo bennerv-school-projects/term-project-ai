@@ -176,13 +176,26 @@ public class Reversi {
             return;
         }
 
-        // AI Move turn
-        if (state.isComputerPlayer()) {
+
+        // Only AI Move
+        if(ReversiConstants.NUMBER_OF_AI >= 2 || (ReversiConstants.NUMBER_OF_AI == 1 && state.isComputerPlayer())) {
             // Reset number of visited nodes/pruned nodes for every move the ai makes
             moveTotalNodes = 0;
             movePrunedNodes = 0;
-            Move bestMove = minimax(0, true, state.getBoard(), state.getCurrentPlayer(), Integer.MIN_VALUE, Integer.MAX_VALUE);
-            System.out.println("Minimax score for current board is: " + bestMove.getScore() + " row: " + bestMove.getRow() + " column: " + bestMove.getColumn());
+            Move bestMove;
+
+            // Create two different minimax functions for tweaking parameters if we're using 2 AI/Computers to play
+            if(ReversiConstants.NUMBER_OF_AI >= 2) {
+                if(state.getCurrentPlayer().equals(Piece.WHITE)) {
+                    bestMove = minimax(0, true, state.getBoard(), state.getCurrentPlayer(), Integer.MIN_VALUE, Integer.MAX_VALUE);
+                } else {
+                    bestMove = minimaxTwo(0, true, state.getBoard(), state.getCurrentPlayer(), Integer.MIN_VALUE, Integer.MAX_VALUE);
+                }
+            } else {
+                bestMove = minimax(0, true, state.getBoard(), state.getCurrentPlayer(), Integer.MIN_VALUE, Integer.MAX_VALUE);
+            }
+
+            System.out.println("Minimax score for player: " + state.getCurrentPlayer() + " and current board is: " + bestMove.getScore() + " row: " + bestMove.getRow() + " column: " + bestMove.getColumn());
             System.out.println("Total number of nodes: " + moveTotalNodes + " Total number of nodes pruned: " + movePrunedNodes);
 
             // Now that we have the minimax, attempt the move and finish turn
@@ -394,8 +407,8 @@ public class Reversi {
     private Move minimax(int depth, boolean isMax, Piece[][] board, Piece player, int alpha, int beta) {
 
         // If we've reached out depth, then return the static evaluation function
-        if (depth == ReversiConstants.MINIMAX_DEPTH) {
-            return new Move(staticEvaluation_CountPieces(board), -1, -1);
+        if (depth == ReversiConstants.MINIMAX_DEPTH_PLAYER_ONE) {
+            return new Move(staticEvaluation(board), -1, -1);
         }
 
         ArrayList<Move> children = new ArrayList<>();
@@ -485,6 +498,112 @@ public class Reversi {
 
     }
 
+
+    /**
+     * Recursive minimax function - uses a different static evaluation compared to the other minimax
+     *
+     * @param depth  - current depth of the tree
+     * @param isMax  - if we're maximizing the tree currently
+     * @param board  - the board object
+     * @param player - the current moving player for the given board object
+     * @param alpha  - the alpha score for alpha-beta pruning
+     * @param beta   - the beta scroe for alpha-beta pruning
+     * @return - an integer representing the minimax output
+     */
+    private Move minimaxTwo(int depth, boolean isMax, Piece[][] board, Piece player, int alpha, int beta) {
+
+        // If we've reached out depth, then return the static evaluation function
+        if (depth == ReversiConstants.MINIMAX_DEPTH_PLAYER_TWO) {
+            return new Move(staticEvaluationTwo(board), -1, -1);
+        }
+
+        ArrayList<Move> children = new ArrayList<>();
+
+        // Find children (valid moves) of the current board object
+        for (int i = 0; i < board.length; i++) {
+            for (int j = 0; j < board.length; j++) {
+                if (board[i][j].equals(Piece.POSSIBLE_MOVE)) {
+                    Piece[][] child = makeCopy(board);
+
+                    // Go through every possible direction and make the move on the board
+                    checkDirection(child, player, i, j, -1, -1, false, false);
+                    checkDirection(child, player, i, j, -1, 0, false, false);
+                    checkDirection(child, player, i, j, -1, 1, false, false);
+                    checkDirection(child, player, i, j, 0, 1, false, false);
+                    checkDirection(child, player, i, j, 1, 1, false, false);
+                    checkDirection(child, player, i, j, 1, 0, false, false);
+                    checkDirection(child, player, i, j, 1, -1, false, false);
+                    checkDirection(child, player, i, j, 0, -1, false, false);
+
+
+                    // Clear, then mark the valid moves on the new child with the new player
+                    clearValidMoves(child);
+                    markValidMoves(child, getOpposite(player));
+
+                    Move validBoardMove;
+                    if (isMax) {
+                        validBoardMove = new Move(board, Integer.MIN_VALUE, i, j);
+                    } else {
+                        validBoardMove = new Move(board, Integer.MAX_VALUE, i, j);
+                    }
+
+
+                    // Add to List of children
+                    children.add(validBoardMove);
+
+                }
+            }
+        }
+
+        // Default move values
+        Move bestMove;
+
+        if (isMax) {
+            bestMove = new Move(Integer.MIN_VALUE, -1, -1);
+        } else {
+            bestMove = new Move(Integer.MAX_VALUE, -1, -1);
+        }
+
+        // Switch player
+        Piece nextPlayer = getOpposite(player);
+        moveTotalNodes += children.size();
+        gameTotalNodes += children.size();
+
+        // Go through every valid board move
+        for (int i = 0; i < children.size(); i++) {
+            Move childBoardMove = children.get(i);
+
+            // Maximize / minimize as necessary
+            if (isMax) {
+                Move move = minimaxTwo(depth + 1, false, childBoardMove.getBoard(), nextPlayer, alpha, beta);
+                if (move.getScore() > bestMove.getScore()) {
+                    bestMove.setRow(childBoardMove.getRow());
+                    bestMove.setColumn(childBoardMove.getColumn());
+                    bestMove.setScore(move.getScore());
+                    alpha = Math.max(alpha, bestMove.getScore());
+                }
+            } else {
+                Move move = minimaxTwo(depth + 1, true, childBoardMove.getBoard(), nextPlayer, alpha, beta);
+                if (move.getScore() < bestMove.getScore()) {
+                    bestMove.setRow(childBoardMove.getRow());
+                    bestMove.setColumn(childBoardMove.getColumn());
+                    bestMove.setScore(move.getScore());
+                    beta = Math.min(beta, bestMove.getScore());
+                }
+            }
+
+            // Alpha beta pruning
+            if (beta <= alpha) {
+                movePrunedNodes += (children.size() - 1 - i);
+                gamePrunedNodes += (children.size() - 1 - i);
+                break;
+            }
+        }
+
+        return bestMove;
+
+    }
+
     /**
      * Make a copy of the game board
      *
@@ -522,6 +641,89 @@ public class Reversi {
         return score;
     }
 
-//    private int staticEvaluation_CheckMobility()
+    /**
+     * Static evaluation function which counts the number of corners a player has compared to the other player
+     *
+     * @param board - the board
+     * @return (total corners held - total corners held by opponent)
+     */
+    private int staticEvaluation_CheckCorners(Piece[][] board) {
+        int score = 0;
+
+        // Top left corner
+        if(board[0][0].equals(state.getCurrentPlayer())) {
+            score++;
+        } else if(board[0][0].equals(getOpposite(state.getCurrentPlayer()))) {
+            score--;
+        }
+
+        // Top right corner
+        if(board[0][board.length - 1].equals(state.getCurrentPlayer())) {
+            score++;
+        } else if(board[0][board.length - 1].equals(getOpposite(state.getCurrentPlayer()))) {
+            score--;
+        }
+
+        // Bottom left corner
+        if(board[board.length - 1][0].equals(state.getCurrentPlayer())) {
+            score++;
+        } else if(board[board.length - 1][0].equals(getOpposite(state.getCurrentPlayer()))) {
+            score--;
+        }
+
+        // Bottom right corner
+        if(board[board.length - 1][board.length - 1].equals(state.getCurrentPlayer())) {
+            score++;
+        } else if(board[board.length - 1][board.length - 1].equals(getOpposite(state.getCurrentPlayer()))) {
+            score--;
+        }
+
+        return score;
+    }
+
+    /**
+     * Static evaluation function for how many potential moves a player has based on current board state.
+     * Note: There is a disadvantage.  Since we don't have the previous move, we aren't measuring
+     * the 100% correct potential moves of the opponent board.  We're just utilizing the same board to measure
+     *
+     * @param board - the current board
+     * @return - (potential moves of current player - potential moves of opponent)
+     */
+    private int staticEvaluation_CheckPotentialMoves(Piece[][] board) {
+        // Create an opponent board (same board)
+        Piece[][] opponentBoard = makeCopy(board);
+        clearValidMoves(opponentBoard);
+        markValidMoves(opponentBoard, getOpposite(state.getCurrentPlayer()));
+
+        int score = 0;
+        for(int i = 0; i < board.length; i++) {
+            for(int j = 0; j < board.length; j++) {
+
+                // Tally based on current player mobility
+                if(board[i][j].equals(Piece.POSSIBLE_MOVE)) {
+                    score++;
+                }
+
+                // Tally based on other player mobility
+                if(opponentBoard[i][j].equals(Piece.POSSIBLE_MOVE)) {
+                    score--;
+                }
+            }
+        }
+
+        return score;
+    }
+
+    private int staticEvaluation(Piece[][] board) {
+        return (100 * staticEvaluation_CheckCorners(board)) +
+                (10 * staticEvaluation_CheckPotentialMoves(board)) +
+                staticEvaluation_CountPieces(board);
+    }
+
+    private int staticEvaluationTwo(Piece[][] board) {
+        return staticEvaluation_CheckCorners(board) +
+                staticEvaluation_CheckPotentialMoves(board) +
+                staticEvaluation_CountPieces(board);
+    }
 }
 
