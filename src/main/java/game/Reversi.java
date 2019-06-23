@@ -46,7 +46,6 @@ public class Reversi {
         blackPiece = blackPiece.getScaledInstance(85, 85, Image.SCALE_SMOOTH);
         whitePiece = whitePiece.getScaledInstance(85, 85, Image.SCALE_SMOOTH);
 
-
         // Create a new game
         newGame();
 
@@ -132,12 +131,6 @@ public class Reversi {
      */
     public void attemptMove(int row, int column) {
 
-
-        // Check to see if it's the AI's turn.
-        if (state.isComputerPlayer()) {
-            return;
-        }
-
         // Make sure that the location we click on is a potential valid move
         if (!state.getBoard()[row][column].equals(Piece.POSSIBLE_MOVE)) {
             return;
@@ -176,6 +169,9 @@ public class Reversi {
             System.out.printf("\nCALLING MINIMAX\n");
             Move bestMove = minimax(0, true, state.getBoard(), state.getCurrentPlayer());
             System.out.println("Minimax score for current board is: " + bestMove.getScore() + " row: " + bestMove.getRow() + " column: " + bestMove.getColumn());
+
+            // Now that we have the minimax, attempt the move and finish turn
+            this.attemptMove(bestMove.getRow(), bestMove.getColumn());
         }
     }
 
@@ -351,6 +347,8 @@ public class Reversi {
      * @return - an integer representing the minimax output
      */
     private Move minimax(int depth, boolean isMax, Piece[][] board, Piece player) {
+
+        // If we've reached out depth, then return the static evaluation function
         if (depth == ReversiConstants.MINIMAX_DEPTH) {
             return new Move(staticEvaluation_CountPieces(board), -1, -1);
         }
