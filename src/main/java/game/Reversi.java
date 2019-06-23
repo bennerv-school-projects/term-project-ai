@@ -173,7 +173,9 @@ public class Reversi {
 
         // AI Move turn
         if(state.isComputerPlayer()) {
-            System.out.println("Minimax for this board state is: " + minimax(0, true, state.getBoard(), state.getCurrentPlayer()));
+            System.out.printf("\nCALLING MINIMAX\n");
+            Move bestMove = minimax(0, true, state.getBoard(), state.getCurrentPlayer());
+            System.out.println("Minimax score for current board is: " + bestMove.getScore() + " row: " + bestMove.getRow() + " column: " + bestMove.getColumn());
         }
     }
 
@@ -348,18 +350,18 @@ public class Reversi {
      * @param player - the current moving player for the given board object
      * @return - an integer representing the minimax output
      */
-    private int minimax(int depth, boolean isMax, Piece[][] board, Piece player) {
+    private Move minimax(int depth, boolean isMax, Piece[][] board, Piece player) {
         if (depth == ReversiConstants.MINIMAX_DEPTH) {
-            return staticEvaluation_CountPieces(board);
+            return new Move(staticEvaluation_CountPieces(board), -1, -1);
         }
 
-        ArrayList<Piece[][]> children = new ArrayList<>();
+        ArrayList<Move> children = new ArrayList<>();
 
         // Find children (valid moves) of the current board object
         for (int i = 0; i < board.length; i++) {
             for (int j = 0; j < board.length; j++) {
                 if (board[i][j].equals(Piece.POSSIBLE_MOVE)) {
-                    Piece[][] child = board.clone();
+                    Piece[][] child = makeCopy(board);
 
                     // Go through every possible direction and make the move on the board
                     checkDirection(child, player, i, j, -1, -1, false, false);
@@ -376,22 +378,71 @@ public class Reversi {
                     clearValidMoves(child);
                     markValidMoves(child, getOpposite(player));
 
+                    Move validBoardMove;
+                    if(isMax) {
+                        validBoardMove = new Move(board, Integer.MIN_VALUE, i, j);
+                    } else {
+                        validBoardMove = new Move(board, Integer.MAX_VALUE, i, j);
+                    }
+
+
                     // Add to List of children
-                    children.add(child);
+                    children.add(validBoardMove);
 
                 }
             }
         }
 
-        // Switch player
-        final Piece nextPlayer = getOpposite(player);
+        // Default move values
+        Move bestMove;
 
-        // Maximize/minimize functions for every player
-        if (isMax) {
-            return Collections.max(children.stream().map(child -> minimax(depth + 1, false, child, nextPlayer)).collect(Collectors.toList()));
+        if(isMax) {
+            bestMove = new Move(Integer.MIN_VALUE, -1, -1);
         } else {
-            return Collections.min(children.stream().map(child -> minimax(depth + 1, true, child, nextPlayer)).collect(Collectors.toList()));
+            bestMove = new Move(Integer.MAX_VALUE, -1, -1);
         }
+
+        // Switch player
+        Piece nextPlayer = getOpposite(player);
+
+        // Go through every valid board move
+        for(Move childBoardMove : children) {
+
+            // Maximize / minimize as necessary
+            if (isMax) {
+                Move move = minimax(depth + 1, false, childBoardMove.getBoard(), nextPlayer);
+                if(move.getScore() > bestMove.getScore()) {
+                    bestMove.setRow(childBoardMove.getRow());
+                    bestMove.setColumn(childBoardMove.getColumn());
+                    bestMove.setScore(move.getScore());
+                }
+            } else {
+                Move move = minimax(depth + 1, true, childBoardMove.getBoard(), nextPlayer);
+                if (move.getScore() < bestMove.getScore()) {
+                    bestMove.setRow(childBoardMove.getRow());
+                    bestMove.setColumn(childBoardMove.getColumn());
+                    bestMove.setScore(move.getScore());
+                }
+            }
+        }
+
+        return bestMove;
+
+    }
+
+    /**
+     * Make a copy of the game board
+     * @param board - the board to copy
+     * @return - a copy of the board passed in
+     */
+    private Piece[][] makeCopy(Piece[][] board) {
+        Piece[][] newBoard = new Piece[board.length][board.length];
+        for(int i = 0; i < board.length; i++) {
+            for(int j = 0; j < board.length; j++) {
+                newBoard[i][j] = board[i][j];
+            }
+        }
+        return newBoard;
     }
 
 
