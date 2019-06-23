@@ -20,6 +20,11 @@ public class Reversi {
 
     private GameState state;
 
+    private int moveTotalNodes = 0;
+    private int movePrunedNodes = 0;
+    private int gameTotalNodes = 0;
+    private int gamePrunedNodes = 0;
+
     /**
      * Sets up the game and begins execution
      */
@@ -83,6 +88,10 @@ public class Reversi {
                 gui.add(boardButtons[i][j]);
             }
         }
+
+        // Reset the number of nodes visited/pruned for the game
+        gamePrunedNodes = 0;
+        gameTotalNodes = 0;
 
         finishTurn();
     }
@@ -162,15 +171,19 @@ public class Reversi {
 
         // If we need to swap players because the current new player doesn't have a valid move,
         // then call finishTurn again and return from this finishTurn() call
-        if(checkFinished(validMoves)) {
+        if (checkFinished(validMoves)) {
             finishTurn();
             return;
         }
 
         // AI Move turn
         if (state.isComputerPlayer()) {
-            Move bestMove = minimax(0, true, state.getBoard(), state.getCurrentPlayer());
+            // Reset number of visited nodes/pruned nodes for every move the ai makes
+            moveTotalNodes = 0;
+            movePrunedNodes = 0;
+            Move bestMove = minimax(0, true, state.getBoard(), state.getCurrentPlayer(), Integer.MIN_VALUE, Integer.MAX_VALUE);
             System.out.println("Minimax score for current board is: " + bestMove.getScore() + " row: " + bestMove.getRow() + " column: " + bestMove.getColumn());
+            System.out.println("Total number of nodes: " + moveTotalNodes + " Total number of nodes pruned: " + movePrunedNodes);
 
             // Now that we have the minimax, attempt the move and finish turn
             this.attemptMove(bestMove.getRow(), bestMove.getColumn());
@@ -218,14 +231,14 @@ public class Reversi {
 
     /**
      * Check if the game is finished and display a box showing the score if it is.
-     *
+     * <p>
      * A game is defined as being over if all pieces are played or neither player can make any move.
      * If one player is unable to move, the game is not over as long as the other player can make a
      * valid move.
      *
      * @param validMoves - the number of valid moves left on the board for the current player
      * @return - returns true if the players need to be switched as there is no valid move
-     *           for the current player
+     * for the current player
      */
     private boolean checkFinished(int validMoves) {
 
@@ -236,9 +249,10 @@ public class Reversi {
             int otherPlayerValidMoves = markValidMoves(boardCopy, getOpposite(state.getCurrentPlayer()));
 
             // If both players have zero moves left, then the game is over
-            if(otherPlayerValidMoves == 0) {
+            if (otherPlayerValidMoves == 0) {
 
                 System.out.println("No valid moves left.  Game over");
+                System.out.println("Number of total nodes: " + gameTotalNodes + " number of pruned nodes: " + gamePrunedNodes);
 
                 int blackPieces = 0, whitePieces = 0;
 
@@ -257,8 +271,10 @@ public class Reversi {
                 }
 
                 String message;
-                if (blackPieces > whitePieces) {
-                    message = "Black wins: " + blackPieces + " to " + whitePieces;
+                if (blackPieces == whitePieces) {
+                    message = "Tie game!  32-32.";
+                } else if (blackPieces > whitePieces) {
+                    message = "Black wins " + blackPieces + " to " + whitePieces;
                 } else {
                     message = "White wins: " + whitePieces + " to " + blackPieces;
                 }
@@ -299,7 +315,8 @@ public class Reversi {
      * @param hitOpposite  - whether we've hit the opposite piece yet
      * @return - boolean whether or not it was a valid move
      */
-    private boolean checkDirection(Piece[][] board, Piece player, int row, int col, int rowIncrement, int colIncrement, boolean hitOpposite, boolean testMove) {
+    private boolean checkDirection(Piece[][] board, Piece player, int row, int col, int rowIncrement,
+                                   int colIncrement, boolean hitOpposite, boolean testMove) {
 
         // Check if out of bounds
         if (row + rowIncrement == BOARD_SIZE ||
@@ -370,9 +387,11 @@ public class Reversi {
      * @param isMax  - if we're maximizing the tree currently
      * @param board  - the board object
      * @param player - the current moving player for the given board object
+     * @param alpha  - the alpha score for alpha-beta pruning
+     * @param beta   - the beta scroe for alpha-beta pruning
      * @return - an integer representing the minimax output
      */
-    private Move minimax(int depth, boolean isMax, Piece[][] board, Piece player) {
+    private Move minimax(int depth, boolean isMax, Piece[][] board, Piece player, int alpha, int beta) {
 
         // If we've reached out depth, then return the static evaluation function
         if (depth == ReversiConstants.MINIMAX_DEPTH) {
@@ -428,25 +447,37 @@ public class Reversi {
 
         // Switch player
         Piece nextPlayer = getOpposite(player);
+        moveTotalNodes += children.size();
+        gameTotalNodes += children.size();
 
         // Go through every valid board move
-        for (Move childBoardMove : children) {
+        for (int i = 0; i < children.size(); i++) {
+            Move childBoardMove = children.get(i);
 
             // Maximize / minimize as necessary
             if (isMax) {
-                Move move = minimax(depth + 1, false, childBoardMove.getBoard(), nextPlayer);
+                Move move = minimax(depth + 1, false, childBoardMove.getBoard(), nextPlayer, alpha, beta);
                 if (move.getScore() > bestMove.getScore()) {
                     bestMove.setRow(childBoardMove.getRow());
                     bestMove.setColumn(childBoardMove.getColumn());
                     bestMove.setScore(move.getScore());
+                    alpha = Math.max(alpha, bestMove.getScore());
                 }
             } else {
-                Move move = minimax(depth + 1, true, childBoardMove.getBoard(), nextPlayer);
+                Move move = minimax(depth + 1, true, childBoardMove.getBoard(), nextPlayer, alpha, beta);
                 if (move.getScore() < bestMove.getScore()) {
                     bestMove.setRow(childBoardMove.getRow());
                     bestMove.setColumn(childBoardMove.getColumn());
                     bestMove.setScore(move.getScore());
+                    beta = Math.min(beta, bestMove.getScore());
                 }
+            }
+
+            // Alpha beta pruning
+            if (beta <= alpha) {
+                movePrunedNodes += (children.size() - 1 - i);
+                gamePrunedNodes += (children.size() - 1 - i);
+                break;
             }
         }
 
