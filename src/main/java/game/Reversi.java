@@ -175,7 +175,7 @@ public class Reversi {
             finishTurn();
             return;
         }
-        
+
         // Only AI Move
         if (ReversiConstants.NUMBER_OF_AI >= 2 || (ReversiConstants.NUMBER_OF_AI == 1 && state.isComputerPlayer())) {
             // Reset number of visited nodes/pruned nodes for every move the ai makes
@@ -197,7 +197,6 @@ public class Reversi {
             }
 
             System.out.println("Minimax score for player: " + state.getCurrentPlayer() + " and current board is: " + bestMove.getScore() + " row: " + bestMove.getRow() + " column: " + bestMove.getColumn());
-            System.out.println("Total number of nodes: " + moveTotalNodes + " Total number of nodes pruned: " + movePrunedNodes);
 
             // Now that we have the minimax, attempt the move and finish turn
             this.attemptMove(bestMove.getRow(), bestMove.getColumn());
@@ -407,7 +406,6 @@ public class Reversi {
 
         // If we've reached out depth, then return the static evaluation function
         if (depth == ReversiConstants.MINIMAX_DEPTH_WHITE_PIECE) {
-//            printBoard(board);
             return new Move(staticEvaluation(board), -1, -1);
         }
 
@@ -429,7 +427,6 @@ public class Reversi {
                     checkDirection(child, player, i, j, 1, -1, false, false);
                     checkDirection(child, player, i, j, 0, -1, false, false);
 
-
                     // Clear, then mark the valid moves on the new child with the new player
                     clearValidMoves(child);
                     markValidMoves(child, getOpposite(player));
@@ -441,12 +438,16 @@ public class Reversi {
                         validBoardMove = new Move(child, Integer.MAX_VALUE, i, j);
                     }
 
-
                     // Add to List of children
                     children.add(validBoardMove);
 
                 }
             }
+        }
+
+        // If no possible moves, then return
+        if(children.isEmpty()) {
+            return new Move(staticEvaluation(board), -1, -1);
         }
 
         // Default move values
@@ -514,7 +515,6 @@ public class Reversi {
 
         // If we've reached out depth, then return the static evaluation function
         if (depth == ReversiConstants.MINIMAX_DEPTH_BLACK_PIECE) {
-//            printBoard(board);
             return new Move(staticEvaluationTwo(board), -1, -1);
         }
 
@@ -554,6 +554,11 @@ public class Reversi {
 
                 }
             }
+        }
+
+        // If no possible moves, then return
+        if(children.isEmpty()) {
+            return new Move(staticEvaluationTwo(board), -1, -1);
         }
 
         // Default move values
@@ -722,7 +727,9 @@ public class Reversi {
      * @return - a static evaluation integer based on current board state
      */
     private int staticEvaluation(Piece[][] board) {
-        return staticEvaluation_CountPieces(board);
+        return staticEvaluation_CountPieces(board) +
+                0*staticEvaluation_CheckCorners(board) +
+                0*staticEvaluation_CheckPotentialMoves(board);
     }
 
     /**
@@ -732,7 +739,9 @@ public class Reversi {
      * @return - a static evaluation integer based on current board state
      */
     private int staticEvaluationTwo(Piece[][] board) {
-        return staticEvaluation_CountPieces(board);
+        return staticEvaluation_CountPieces(board) +
+                10*staticEvaluation_CheckCorners(board) +
+                0*staticEvaluation_CheckPotentialMoves(board);
     }
 
     /**
@@ -740,6 +749,7 @@ public class Reversi {
      * @param board - the board to print out
      */
     private void printBoard(Piece[][] board) {
+        System.out.println("Printing board");
         for(int i = 0; i < board.length; i++) {
             for(int j = 0; j < board.length; j++) {
                 if(board[i][j].equals(Piece.BLACK)) {
