@@ -178,15 +178,17 @@ public class Reversi {
 
 
         // Only AI Move
-        if(ReversiConstants.NUMBER_OF_AI >= 2 || (ReversiConstants.NUMBER_OF_AI == 1 && state.isComputerPlayer())) {
+        if (ReversiConstants.NUMBER_OF_AI >= 2 || (ReversiConstants.NUMBER_OF_AI == 1 && state.isComputerPlayer())) {
             // Reset number of visited nodes/pruned nodes for every move the ai makes
             moveTotalNodes = 0;
             movePrunedNodes = 0;
             Move bestMove;
 
             // Create two different minimax functions for tweaking parameters if we're using 2 AI/Computers to play
-            if(ReversiConstants.NUMBER_OF_AI >= 2) {
-                if(state.getCurrentPlayer().equals(Piece.WHITE)) {
+            if (ReversiConstants.NUMBER_OF_AI >= 2) {
+
+                // Black Piece will call regular minimax function
+                if (state.getCurrentPlayer().equals(Piece.BLACK)) {
                     bestMove = minimax(0, true, state.getBoard(), state.getCurrentPlayer(), Integer.MIN_VALUE, Integer.MAX_VALUE);
                 } else {
                     bestMove = minimaxTwo(0, true, state.getBoard(), state.getCurrentPlayer(), Integer.MIN_VALUE, Integer.MAX_VALUE);
@@ -231,13 +233,11 @@ public class Reversi {
                 validMove = validMove || checkDirection(board, player, i, j, 0, -1, false, true);
 
                 if (validMove) {
-//                    System.out.println(i + ", " + j + " is a valid move");
                     board[i][j] = Piece.POSSIBLE_MOVE;
                     validMoves += 1;
                 }
             }
         }
-//        System.out.println("There are " + validMoves + " valid moves");
         return validMoves;
 
     }
@@ -407,7 +407,7 @@ public class Reversi {
     private Move minimax(int depth, boolean isMax, Piece[][] board, Piece player, int alpha, int beta) {
 
         // If we've reached out depth, then return the static evaluation function
-        if (depth == ReversiConstants.MINIMAX_DEPTH_PLAYER_ONE) {
+        if (depth == ReversiConstants.MINIMAX_DEPTH_WHITE_PIECE) {
             return new Move(staticEvaluation(board), -1, -1);
         }
 
@@ -513,7 +513,7 @@ public class Reversi {
     private Move minimaxTwo(int depth, boolean isMax, Piece[][] board, Piece player, int alpha, int beta) {
 
         // If we've reached out depth, then return the static evaluation function
-        if (depth == ReversiConstants.MINIMAX_DEPTH_PLAYER_TWO) {
+        if (depth == ReversiConstants.MINIMAX_DEPTH_BLACK_PIECE) {
             return new Move(staticEvaluationTwo(board), -1, -1);
         }
 
@@ -651,30 +651,30 @@ public class Reversi {
         int score = 0;
 
         // Top left corner
-        if(board[0][0].equals(state.getCurrentPlayer())) {
+        if (board[0][0].equals(state.getCurrentPlayer())) {
             score++;
-        } else if(board[0][0].equals(getOpposite(state.getCurrentPlayer()))) {
+        } else if (board[0][0].equals(getOpposite(state.getCurrentPlayer()))) {
             score--;
         }
 
         // Top right corner
-        if(board[0][board.length - 1].equals(state.getCurrentPlayer())) {
+        if (board[0][board.length - 1].equals(state.getCurrentPlayer())) {
             score++;
-        } else if(board[0][board.length - 1].equals(getOpposite(state.getCurrentPlayer()))) {
+        } else if (board[0][board.length - 1].equals(getOpposite(state.getCurrentPlayer()))) {
             score--;
         }
 
         // Bottom left corner
-        if(board[board.length - 1][0].equals(state.getCurrentPlayer())) {
+        if (board[board.length - 1][0].equals(state.getCurrentPlayer())) {
             score++;
-        } else if(board[board.length - 1][0].equals(getOpposite(state.getCurrentPlayer()))) {
+        } else if (board[board.length - 1][0].equals(getOpposite(state.getCurrentPlayer()))) {
             score--;
         }
 
         // Bottom right corner
-        if(board[board.length - 1][board.length - 1].equals(state.getCurrentPlayer())) {
+        if (board[board.length - 1][board.length - 1].equals(state.getCurrentPlayer())) {
             score++;
-        } else if(board[board.length - 1][board.length - 1].equals(getOpposite(state.getCurrentPlayer()))) {
+        } else if (board[board.length - 1][board.length - 1].equals(getOpposite(state.getCurrentPlayer()))) {
             score--;
         }
 
@@ -696,16 +696,16 @@ public class Reversi {
         markValidMoves(opponentBoard, getOpposite(state.getCurrentPlayer()));
 
         int score = 0;
-        for(int i = 0; i < board.length; i++) {
-            for(int j = 0; j < board.length; j++) {
+        for (int i = 0; i < board.length; i++) {
+            for (int j = 0; j < board.length; j++) {
 
                 // Tally based on current player mobility
-                if(board[i][j].equals(Piece.POSSIBLE_MOVE)) {
+                if (board[i][j].equals(Piece.POSSIBLE_MOVE)) {
                     score++;
                 }
 
                 // Tally based on other player mobility
-                if(opponentBoard[i][j].equals(Piece.POSSIBLE_MOVE)) {
+                if (opponentBoard[i][j].equals(Piece.POSSIBLE_MOVE)) {
                     score--;
                 }
             }
@@ -714,16 +714,24 @@ public class Reversi {
         return score;
     }
 
+    /**
+     * White Piece static evaluation function
+     *
+     * @param board - the game board to evaluate
+     * @return - a static evaluation integer based on current board state
+     */
     private int staticEvaluation(Piece[][] board) {
-        return (100 * staticEvaluation_CheckCorners(board)) +
-                (10 * staticEvaluation_CheckPotentialMoves(board)) +
-                staticEvaluation_CountPieces(board);
+        return staticEvaluation_CountPieces(board);
     }
 
+    /**
+     * Black Piece static evaluation function
+     *
+     * @param board - the game board to evaluate
+     * @return - a static evaluation integer based on current board state
+     */
     private int staticEvaluationTwo(Piece[][] board) {
-        return staticEvaluation_CheckCorners(board) +
-                staticEvaluation_CheckPotentialMoves(board) +
-                staticEvaluation_CountPieces(board);
+        return staticEvaluation_CountPieces(board);
     }
 }
 
