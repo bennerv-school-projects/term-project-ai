@@ -175,8 +175,7 @@ public class Reversi {
             finishTurn();
             return;
         }
-
-
+        
         // Only AI Move
         if (ReversiConstants.NUMBER_OF_AI >= 2 || (ReversiConstants.NUMBER_OF_AI == 1 && state.isComputerPlayer())) {
             // Reset number of visited nodes/pruned nodes for every move the ai makes
@@ -187,8 +186,8 @@ public class Reversi {
             // Create two different minimax functions for tweaking parameters if we're using 2 AI/Computers to play
             if (ReversiConstants.NUMBER_OF_AI >= 2) {
 
-                // Black Piece will call regular minimax function
-                if (state.getCurrentPlayer().equals(Piece.BLACK)) {
+                // White Piece will call regular minimax function
+                if (state.getCurrentPlayer().equals(Piece.WHITE)) {
                     bestMove = minimax(0, true, state.getBoard(), state.getCurrentPlayer(), Integer.MIN_VALUE, Integer.MAX_VALUE);
                 } else {
                     bestMove = minimaxTwo(0, true, state.getBoard(), state.getCurrentPlayer(), Integer.MIN_VALUE, Integer.MAX_VALUE);
@@ -401,13 +400,14 @@ public class Reversi {
      * @param board  - the board object
      * @param player - the current moving player for the given board object
      * @param alpha  - the alpha score for alpha-beta pruning
-     * @param beta   - the beta scroe for alpha-beta pruning
+     * @param beta   - the beta score for alpha-beta pruning
      * @return - an integer representing the minimax output
      */
     private Move minimax(int depth, boolean isMax, Piece[][] board, Piece player, int alpha, int beta) {
 
         // If we've reached out depth, then return the static evaluation function
         if (depth == ReversiConstants.MINIMAX_DEPTH_WHITE_PIECE) {
+//            printBoard(board);
             return new Move(staticEvaluation(board), -1, -1);
         }
 
@@ -436,9 +436,9 @@ public class Reversi {
 
                     Move validBoardMove;
                     if (isMax) {
-                        validBoardMove = new Move(board, Integer.MIN_VALUE, i, j);
+                        validBoardMove = new Move(child, Integer.MIN_VALUE, i, j);
                     } else {
-                        validBoardMove = new Move(board, Integer.MAX_VALUE, i, j);
+                        validBoardMove = new Move(child, Integer.MAX_VALUE, i, j);
                     }
 
 
@@ -514,6 +514,7 @@ public class Reversi {
 
         // If we've reached out depth, then return the static evaluation function
         if (depth == ReversiConstants.MINIMAX_DEPTH_BLACK_PIECE) {
+//            printBoard(board);
             return new Move(staticEvaluationTwo(board), -1, -1);
         }
 
@@ -542,9 +543,9 @@ public class Reversi {
 
                     Move validBoardMove;
                     if (isMax) {
-                        validBoardMove = new Move(board, Integer.MIN_VALUE, i, j);
+                        validBoardMove = new Move(child, Integer.MIN_VALUE, i, j);
                     } else {
-                        validBoardMove = new Move(board, Integer.MAX_VALUE, i, j);
+                        validBoardMove = new Move(child, Integer.MAX_VALUE, i, j);
                     }
 
 
@@ -576,7 +577,7 @@ public class Reversi {
             // Maximize / minimize as necessary
             if (isMax) {
                 Move move = minimaxTwo(depth + 1, false, childBoardMove.getBoard(), nextPlayer, alpha, beta);
-                if (move.getScore() > bestMove.getScore()) {
+                if (move.getScore() >= bestMove.getScore()) {
                     bestMove.setRow(childBoardMove.getRow());
                     bestMove.setColumn(childBoardMove.getColumn());
                     bestMove.setScore(move.getScore());
@@ -584,7 +585,7 @@ public class Reversi {
                 }
             } else {
                 Move move = minimaxTwo(depth + 1, true, childBoardMove.getBoard(), nextPlayer, alpha, beta);
-                if (move.getScore() < bestMove.getScore()) {
+                if (move.getScore() <= bestMove.getScore()) {
                     bestMove.setRow(childBoardMove.getRow());
                     bestMove.setColumn(childBoardMove.getColumn());
                     bestMove.setScore(move.getScore());
@@ -732,6 +733,25 @@ public class Reversi {
      */
     private int staticEvaluationTwo(Piece[][] board) {
         return staticEvaluation_CountPieces(board);
+    }
+
+    /**
+     * Prints the board for debugging as passed in
+     * @param board - the board to print out
+     */
+    private void printBoard(Piece[][] board) {
+        for(int i = 0; i < board.length; i++) {
+            for(int j = 0; j < board.length; j++) {
+                if(board[i][j].equals(Piece.BLACK)) {
+                    System.out.print("X ");
+                } else if(board[i][j].equals(Piece.WHITE)) {
+                    System.out.print("O ");
+                } else {
+                    System.out.print("_ ");
+                }
+            }
+            System.out.println();
+        }
     }
 }
 
